@@ -1,3 +1,8 @@
+(defpackage :lisp-blog
+  (:use :common-lisp))
+
+(in-package :lisp-blog)
+
 (require 'hunchentoot)
 (require 'cl-who)
 
@@ -134,6 +139,8 @@
 (push (hunchentoot:create-regex-dispatcher "^/save-user$" 'save-user)
       hunchentoot:*dispatch-table*)
 
+(push (hunchentoot:create-regex-dispatcher "^/rss$" 'rss)
+      hunchentoot:*dispatch-table*)
 
 (push (hunchentoot:create-static-file-dispatcher-and-handler "/style.css"
 							     "/home/robojamie/Dropbox/style.css")
@@ -190,8 +197,19 @@
     :reader enclosure
     :initarg :enclosure)))
 
-
-
+(defun rss ()
+  (cl-who:with-html-output-to-string (s nil :prologue "<?xml version=\"1.0\" encoding=\"ISO-8859-1\" ?>" :indent t)
+    (:rss :|version| "2.0"
+	  (:channel (:title "Test title")
+		    (:link "http://www.example.com")
+		    
+		    (:description "A sample feed")
+		    (dolist (I *items*)
+		    (cl-who:htm (:item
+		    (cl-who:htm (:title (cl-who:str (title I)))
+				    (:link (cl-who:str (link I)))
+					   (:description (cl-who:str (description I)))))))))))
+				  
 
 
 
