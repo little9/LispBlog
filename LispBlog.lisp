@@ -6,10 +6,14 @@
 (require 'hunchentoot)
 (require 'cl-who)
 
+; Variables for content (temporary!) 
+
 (defvar *server* (hunchentoot:start (make-instance 'hunchentoot:acceptor :port 4242)))
 (defvar *channels* nil)
 (defvar *items* nil)
 (defvar *users* nil)
+
+; The homepage for the blog 
 
 (defun blog-home () 
   (cl-who:with-html-output-to-string (str nil :prologue t :indent t)
@@ -29,8 +33,22 @@
 		    (:p
 		     (cl-who:str (description I))))))))))
 
+; The RSS feed
 
+(defun rss ()
+  (cl-who:with-html-output-to-string (s nil :prologue "<?xml version=\"1.0\" encoding=\"ISO-8859-1\" ?>" :indent t)
+    (:rss :|version| "2.0"
+	  (:channel (:title "Test title")
+		    (:link "http://www.example.com")
+		    
+		    (:description "A sample feed")
+		    (dolist (I *items*)
+		    (cl-who:htm (:item
+		    (cl-who:htm (:title (cl-who:str (title I)))
+				    (:link (cl-who:str (link I)))
+					   (:description (cl-who:str (description I)))))))))))
 
+; For creating a channel (perhaps when starting the blog) 
 
 (defun create-channel ()
   (cl-who:with-html-output-to-string (str nil :prologue t :indent t)
@@ -49,6 +67,8 @@
 	     
 	     (:input :type "submit" :value "save"))))))
 
+; Create a user/password (for login and admin stuff)
+
 (defun create-user ()
   (cl-who:with-html-output-to-string (str nil :prologue t :indent t)
        (:html 
@@ -65,6 +85,8 @@
 	    
 	     
 	     (:input :type "submit" :value "save")))))
+
+; Create an item to post on the home page 
 
 (defun create-item ()
   (cl-who:with-html-output-to-string (str nil :prologue t :indent t)
@@ -87,6 +109,7 @@
 	  ;   (:div "enclosure" (:input :type "text" :name "enclosure"))
 	     (:input :type "submit" :value "save"))))))
 
+; Save the channel -- right now only to the variable 
 
 (defun save-channel ()
   (let ((title (hunchentoot:parameter "title"))
@@ -98,6 +121,7 @@
 	     *channels*)      
        (hunchentoot:redirect "/")))
 
+; Function to save posts 
 
 (defun save-item ()
   (let ((title (hunchentoot:parameter "title"))
@@ -109,6 +133,8 @@
 	     *items*)      
        (hunchentoot:redirect "/")))
 
+; Function to save users
+
 (defun save-user ()
   (let ((username (hunchentoot:parameter "username"))
 	(password (hunchentoot:parameter "password")))
@@ -117,6 +143,8 @@
 	     *users*)      
        (hunchentoot:redirect "/")))
 
+
+; Regex dispatchers
 
 (push (hunchentoot:create-regex-dispatcher "^/$" 'blog-home)
       hunchentoot:*dispatch-table*)
@@ -147,7 +175,7 @@
       hunchentoot:*dispatch-table*)
 
 
-
+; Classes for content and users
 
 (defclass channel ()
   ((title 
@@ -197,18 +225,7 @@
     :reader enclosure
     :initarg :enclosure)))
 
-(defun rss ()
-  (cl-who:with-html-output-to-string (s nil :prologue "<?xml version=\"1.0\" encoding=\"ISO-8859-1\" ?>" :indent t)
-    (:rss :|version| "2.0"
-	  (:channel (:title "Test title")
-		    (:link "http://www.example.com")
-		    
-		    (:description "A sample feed")
-		    (dolist (I *items*)
-		    (cl-who:htm (:item
-		    (cl-who:htm (:title (cl-who:str (title I)))
-				    (:link (cl-who:str (link I)))
-					   (:description (cl-who:str (description I)))))))))))
+
 				  
 
 
