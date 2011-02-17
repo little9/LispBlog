@@ -22,17 +22,31 @@
 	    (:link :rel "stylesheet" :type "text/css"
 		   :href "/style.css"))
      (:body 
-      (:h1 "A Blog in Common Lisp")
-        (:a :href "/create-item" "Add new Post")
+      (:div :id "main"
+      (:div :id "header"
+      (:div :id "site-title"
+	    (:a :href "/"
+       "A Blog in Common Lisp")))
+      (:div :id "access"
+	    (:div :class "menu-header"
+		  (:ul 
+		   (:li
+        (:a :href "/create-item" "Add new Post"))
+		   (:li 
+	(:a :href "/rss" "RSS")))))
+	(:div :id "main"
+	      (:div :id "content" 
+		    
       (dolist (I *items*)
 	(cl-who:htm (:p
-		     (:h2
-		      (:a :href (link I) (cl-who:str (title I))))
-		    (:p "Date: "
+		     (:div :class "entry-title"
+		      (:a :href (link I) (cl-who:str (title I)))))
+		    (:div :class "entry-meta"  "Date: "
 		     (cl-who:str (pubdate I)))
-		    (:p
-		     (cl-who:str (description I))))))))))
+		    (:div :class "entry-content"
+		     (cl-who:str (description I))))))))))))
 
+ 
 ; The RSS feed
 
 (defun rss ()
@@ -109,6 +123,29 @@
 	  ;   (:div "enclosure" (:input :type "text" :name "enclosure"))
 	     (:input :type "submit" :value "save"))))))
 
+(defun create-post ()
+  (cl-who:with-html-output-to-string (str nil :prologue t :indent t)
+    (:html 
+     (:head (:title "Add Post")
+	    (:link :rel "stylesheet" :type "text/css"
+		   :href "/style.css"))
+     (:body 
+         (:h1 "Create a new post")
+    
+      (:form :action "/save-post" :method "post"
+	 (:div "Title:" (:input :type "text" :name "title"))
+	     (:div "Link:" (:input :type "text" :name "link"))
+	     (:div "Main text:" (:input :type "text" :name "description"))
+	  ;   (:div "author" (:input :type "text" :name "author"))
+	  ;   (:div "comments" (:input :type "text" :name "comments"))
+	  ;   (:div "guid" (:input :type "text" :name "guid"))
+	  ;   (:div "category" (:input :type "text" :name "category"))
+	 ;    (:div "source" (:input :type "text" :name "source"))
+	  ;   (:div "enclosure" (:input :type "text" :name "enclosure"))
+	     (:input :type "submit" :value "save"))))))
+
+; Save the channel -- right now only to the variable
+
 ; Save the channel -- right now only to the variable 
 
 (defun save-channel ()
@@ -143,13 +180,28 @@
 	     *users*)      
        (hunchentoot:redirect "/")))
 
+(defun save-post ()
+  (push (make-blog-post (hunchentoot:parameter "title") (hunchentoot:parameter "link") (hunchentoot:parameter "description") (get-universal-time))
+	     *blogposts*)      
+       (hunchentoot:redirect "/")))
+
+
 
 ; Regex dispatchers
 
 (push (hunchentoot:create-regex-dispatcher "^/$" 'blog-home)
       hunchentoot:*dispatch-table*)
 
+
+
 (push (hunchentoot:create-regex-dispatcher "^/save-item$" 'save-item)
+      hunchentoot:*dispatch-table*)
+
+(push (hunchentoot:create-regex-dispatcher "^/save-post$" 'save-post)
+      hunchentoot:*dispatch-table*)
+
+
+(push (hunchentoot:create-regex-dispatcher "^/create-post$" 'create-post)
       hunchentoot:*dispatch-table*)
 
 (push (hunchentoot:create-regex-dispatcher "^/create-item$" 'create-item)
@@ -171,7 +223,7 @@
       hunchentoot:*dispatch-table*)
 
 (push (hunchentoot:create-static-file-dispatcher-and-handler "/style.css"
-							     "/home/robojamie/Dropbox/style.css")
+							     "/home/robojamie/Dropbox/LispBlog/style.css")
       hunchentoot:*dispatch-table*)
 
 
@@ -226,13 +278,23 @@
     :initarg :enclosure)))
 
 
-				  
+(defvar *blogposts* nil)
 
+(defun make-blog-post (title link description pubdate)
+  (list :title title :link link :description description :pubdate pubdate))
 
+(defun add-blog-post (post) (push post *blogposts*))
 
+(defun save-db (filename)
+  (with-open-file (out filename
+                   :direction :output
+                   :if-exists :supersede)
+    (with-standard-io-syntax
+      (print *blogposts* out))))
 
-
-
-
+(defun load-db (filename)
+  (with-open-file (in filename)
+    (with-standard-io-syntax
+      (setf *blogposts* (read in)))))
 
  
