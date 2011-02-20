@@ -9,6 +9,8 @@
 (defvar *server* (hunchentoot:start (make-instance 'hunchentoot:acceptor :port 4242)))
 
 (defvar *blogposts* nil)
+(defvar *results* nil)
+
 
 ; The homepage for the blog 
 
@@ -93,6 +95,11 @@
        (hunchentoot:redirect "/"))
 
 
+(defun make-blog-post (title link description pubdate guid)
+  (list :title title :link link :description description :pubdate pubdate :guid guid))
+
+(defun add-blog-post (post) (push post *blogposts*))
+
 ; Regex dispatchers
 
 (push (hunchentoot:create-regex-dispatcher "^/$" 'blog-home)
@@ -116,11 +123,10 @@
 							     "/home/robojamie/Dropbox/LispBlog/style.css")
       hunchentoot:*dispatch-table*)
 
-(defvar *results* nil)
-(defvar *resultss* nil)
+
 
 (defun get-pub-post (&optional i)
- (get-page i)
+ 
   (cl-who:with-html-output-to-string (str nil :prologue t :indent t)
     (:html
      (:head (:title "A Blog in Lisp!")
@@ -141,7 +147,7 @@
 	(:a :href "/rss" "RSS")))))
 	(:div :id "main"
 	      (:div :id "content" 
-       	  	(cl-who:str i)
+      (get-page i)
       (loop for ( post title posts link postss description postsss pubdate) in *results*
 	
 	  do (cl-who:htm (:p
@@ -157,24 +163,18 @@
 
 
 
-(hunchentoot:define-easy-handler (say-yo :uri "/post") (i)
+(hunchentoot:define-easy-handler (post-getter :uri "/post") (i)
   (get-pub-post i))
 
-
-
-(defun select (selector-fn)
-  (remove-if-not selector-fn *blogposts*))
-
-(defun artist-selector (artist)
-  #'(lambda (cd) (equal (getf cd :artist) artist)))
+(defun get-page (page)
+(setf *results* 
+(remove-if-not
+     (lambda (post) (equal (getf post :title)  page)) *blogposts*)))
 
 
 
 
-(defun make-blog-post (title link description pubdate guid)
-  (list :title title :link link :description description :pubdate pubdate :guid guid))
-
-(defun add-blog-post (post) (push post *blogposts*))
+; Save and load posts from 
 
 (defun save-db (filename)
   (with-open-file (out filename
@@ -192,30 +192,8 @@
 
 (load-db "/home/robojamie/Dropbox/LispBlog/file.lisp")
 
- 
 
 
 
 
-(push (remove-if-not
-     (lambda (post) (equal (getf post :pubdate)  3507144888)) *blogposts*) *results*)
 
-
-
-(defun get-page (page)
-(setf *results* 
-(remove-if-not
-     (lambda (post) (equal (getf post :title)  page)) *blogposts*)))
-
-
-
-(get-page "Test")
-
-(defun make-url-part (title)
-  "Generate a url-part from a title. A url-part should only have
-alphanumeric characters or dashes (in place of spaces)."
-  (string-downcase 
-   (delete-if #'(lambda (x) (not (or (alphanumericp x) (char= #\- x))))
-              (substitute #\- #\Space title))))
-
-(make-url-part ("This is a title"))
