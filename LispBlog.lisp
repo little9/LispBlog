@@ -91,7 +91,7 @@
 (defun save-post ()
   (push (make-blog-post (hunchentoot:parameter "title") (concatenate 'string "/post?i=" (hunchentoot:parameter "title")) (hunchentoot:parameter "description") (get-universal-time) (concatenate 'string "/post?i=" (hunchentoot:parameter "title")))
 	     *blogposts*)     
-  (save-db "/home/robojamie/Dropbox/file.lisp")
+  (save-db "/file.lisp")
        (hunchentoot:redirect "/"))
 
 
@@ -120,7 +120,7 @@
       hunchentoot:*dispatch-table*)
 
 (push (hunchentoot:create-static-file-dispatcher-and-handler "/style.css"
-							     "/home/robojamie/Dropbox/LispBlog/style.css")
+							     "/style.css")
       hunchentoot:*dispatch-table*)
 
 
@@ -190,7 +190,7 @@
 
 
 
-(load-db "/home/robojamie/Dropbox/LispBlog/file.lisp")
+(load-db "/file.lisp")
 
 
 
